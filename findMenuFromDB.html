@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            height: 90vh;
+        }
+
+        .top {
+            height: 30%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .item-info {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .item-div {
+            display: flex;
+        }
+
+        .bottom {
+            height: 70%;
+
+            border: 1px solid black;
+            overflow-x: hidden;
+            overflow-y: scroll;
+        }
+
+        .searchBtn {
+            margin-left: 10px;
+        }
+
+        .wait-message {
+            height: 100%;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .item-span {
+            cursor: pointer;
+        }
+
+        .item-selected {
+            background-color: #E0E0E0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="top">
+            <div>
+                <span> 메뉴 검색 : </span>
+                <input id="searchText" type="text">
+                <button id="searchFromDB" class="searchBtn">선택</button>
+            </div>
+            <div id="itemInfo" class="item-info"></div>
+        </div>
+        <div class="bottom">
+        </div>
+    </div>
+
+    <script>
+        let dataBox = document.querySelector(".bottom")
+
+        let v_ajax = new XMLHttpRequest()
+        v_ajax.open("GET", "./resources/jsonData/food_data.json")
+
+        v_ajax.onload = () => {
+            let v_json = JSON.parse(v_ajax.response)
+            let v_records = v_json["records"]
+
+            searchData()
+
+            document.getElementById("searchFromDB").addEventListener("click", searchData)
+
+            // db에 있는 음식 검색어에 따른 결과
+            function searchData() {
+                dataBox.innerHTML = ""
+                let v_searchValue = document.getElementById("searchText").value
+
+                for (i of v_records) {
+                    if (i["식품명"].includes(v_searchValue)) {
+                        let dataDiv = document.createElement("div")
+                        dataDiv.classList.add("item")
+
+                        let dataName = document.createElement("span")
+                        dataName.classList.add("item-span")
+                        dataName.innerHTML = i["식품명"]
+                        dataName.addEventListener("click", dataSet)
+                        dataDiv.append(dataName)
+
+                        let dataKey = document.createElement("input")
+                        dataKey.setAttribute("type", "hidden")
+                        dataKey.value = i["식품코드"]
+                        dataDiv.append(dataKey)
+
+                        dataBox.append(dataDiv)
+                    }
+                }
+            }
+
+            // 선택된 음식 정보 보기
+            function dataSet() {
+                let divArray = document.querySelectorAll(".item")
+                for (i of divArray) {
+                    i.classList.remove("item-selected")
+                }
+                event.target.parentElement.classList.add("item-selected")
+                let key = event.target.parentElement.children[1].value
+
+                let selectedData = {}
+
+                for (i of v_records) {
+                    if (i["식품코드"] == key) {
+                        selectedData = {
+                            "key": i["식품코드"],
+                            "name": i["식품명"],
+                            "kcal": i["에너지(kcal)"],
+                            "carb": i["탄수화물(g)"],
+                            "prot": i["단백질(g)"],
+                            "fatce": i["지방(g)"]
+                        }
+                    }
+                }
+
+                let itemInfo = document.getElementById("itemInfo")
+
+                itemInfo.innerHTML = "정보 (100g 기준)"
+
+                let itemDiv = document.createElement("div")
+                itemDiv.classList.add("item-div")
+
+                let itemNameColumn = document.createElement("div")
+                itemNameColumn.innerHTML = "<div>식품명</div>"
+                    + "<div>열량(kcal)</div>"
+                    + "<div>탄수화물(g)</div>"
+                    + "<div>단백질(g)</div>"
+                    + "<div>지방(g)</div>"
+                itemDiv.append(itemNameColumn)
+
+                let itemInfoColumn = document.createElement("div")
+                itemInfoColumn.innerHTML = "<div>" + selectedData["name"] + "</div>"
+                    + "<div>" + selectedData["kcal"] + "</div>"
+                    + "<div>" + selectedData["carb"] + "</div>"
+                    + "<div>" + selectedData["prot"] + "</div>"
+                    + "<div>" + selectedData["fatce"] + "</div>"
+                itemDiv.append(itemInfoColumn)
+
+                itemInfo.append(itemDiv)
+
+                let registBtn = document.createElement("button")
+                registBtn.style.marginLeft = "10px"
+
+                // 선택된 음식 등록
+                registBtn.innerHTML = "등록"
+                registBtn.addEventListener("click", () => {
+                    let urlSearch = new URLSearchParams(location.search)
+                    let v_index = urlSearch.get("index")
+
+                    opener.getdataFromDB(v_index, selectedData)
+                    close()
+                })
+                itemInfo.append(registBtn)
+            }
+        }
+
+        v_ajax.send()
+    </script>
+</body>
+
+</html>

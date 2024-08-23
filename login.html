@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+    <script src="./resources/JS/service-key.js"></script>
+    <script>
+        firebase.initializeApp(firebaseConfig)
+    </script>
+
+    <link rel="stylesheet" href="./resources/CSS/userdoc.css">
+
+    <style>
+        .login-btn {
+            width: 80%;
+            margin-top: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(13, 110, 253);
+            color: white;
+        }
+
+        .login-cancel-btn {
+            width: 80%;
+            margin-top: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(108, 117, 125);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="userdoc-box">
+            <div class="userdoc-content">
+                <div class="userdoc-input-content">
+                    <div><span class="userdoc-text">아이디 </span></div>
+                    <div><span class="userdoc-text">비빌번호 </span></div>
+                </div>
+                <div class="userdoc-input-content">
+                    <div><input id="inputId" class="userdoc-input-text" type="text"></div>
+                    <div><input id="inputPassword" class="userdoc-input-text" type="password"></div>
+                </div>
+            </div>
+            <div class="userdoc-div">
+                <span id="registBtn" class="userdoc-div-btn">회원가입</span>
+                <span id="findidpwBtn" class="userdoc-div-btn">아이디/비밀번호 찾기</span>
+            </div>
+            <div class="userdoc-btn-div userdoc-div">
+                <div id="loginBtn" class="login-btn userdoc-div-btn">로그인</div>
+            </div>
+            <div class="userdoc-btn-div userdoc-div">
+                <div id="loginCancelBtn" class="login-cancel-btn userdoc-div-btn">취소</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const db = firebase.firestore()
+
+        document.getElementById("registBtn").addEventListener("click", () => location.href = "./regist.html")
+        document.getElementById("findidpwBtn").addEventListener("click", () => location.href = "./findidpw.html")
+
+        document.getElementById("loginBtn").addEventListener("click", () => {
+            let inputIdValue = inputId.value
+            let inputPwValue = inputPassword.value
+
+            db.collection("user").doc(inputIdValue).get()
+                .then((result) => {
+                    if (!result) {
+                        alert("유효하지 않은 아이디 혹은 비밀번호 입니다.")
+                        return
+                    }
+
+                    let v_data = result.data()
+
+                    if (inputPwValue == v_data["password"]) {
+                        sessionStorage.setItem("loginInfo", JSON.stringify(v_data))
+                        location.replace("./index.html")
+                    } else {
+                        alert("유효하지 않은 아이디 혹은 비밀번호 입니다.")
+                    }
+                }).catch(() => {
+                    alert("유효하지 않은 아이디 혹은 비밀번호 입니다.")
+                    return
+                })
+        })
+
+        document.getElementById("loginCancelBtn").addEventListener("click", () => location.replace("./index.html"))
+    </script>
+</body>
+
+</html>

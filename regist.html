@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입</title>
+
+    <link rel="stylesheet" href="./resources/CSS/userdoc.css">
+
+    <style>
+        .regist-btn {
+            width: 40%;
+            margin-top: 5px;
+            margin-right: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(13, 110, 253);
+            color: white;
+        }
+
+        .regist-cancel-btn {
+            width: 40%;
+            margin-top: 5px;
+            margin-left: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(108, 117, 125);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="userdoc-box">
+            <div class="userdoc-content">
+                <div class="userdoc-input-content">
+                    <div><span class="userdoc-text">아이디</span></div>
+                    <div><span class="userdoc-text">비빌번호</span></div>
+                    <div><span class="userdoc-text">비빌번호 확인</span></div>
+                    <div><span style="margin:10px">　</span></div>
+                    <div><span class="userdoc-text">이름</span></div>
+                    <div><span class="userdoc-text">이메일</span></div>
+                    <div><span class="userdoc-text">생년월일</span></div>
+                </div>
+                <div class="userdoc-input-content">
+                    <div><input id="inputId" class="userdoc-input-text" type="text"></div>
+                    <div><input id="inputPassword" class="userdoc-input-text" type="password"></div>
+                    <div><input id="inputPasswordCheck" class="userdoc-input-text" type="password">
+                        <button id="inputPasswordCheckButton" style="margin:10px">확인</button>
+                    </div>
+                    <div><span id="registTestResult" style="margin:10px">　</span></div>
+                    <div><input id="inputName" class="userdoc-input-text" type="text"></div>
+                    <div><input id="inputEmail" class="userdoc-input-text" type="email"></div>
+                    <div><select id="birthYear" class="userdoc-input-text"></select>
+                        <select id="birthMonth" class="userdoc-input-text">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
+                        <select id="birthDate" class="userdoc-input-text"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="userdoc-btn-div userdoc-div">
+                <div id="registBtn" class="regist-btn userdoc-div-btn">회원 가입</div>
+                <div id="cancelBtn" class="regist-cancel-btn userdoc-div-btn">취소</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let inputPassword = document.getElementById("inputPassword")
+        let inputPasswordCheck = document.getElementById("inputPasswordCheck")
+        let resultShow = document.getElementById("registTestResult")
+
+        // 비밀번호 확인 여부
+        let passwordCheck = false
+
+        // 비밀번호를 입력할 때 마다 확인 여부는 false 가 된다
+        inputPassword.addEventListener("input", () => {
+            passwordCheck = false
+            resultShow.innerHTML = ""
+        })
+        inputPasswordCheck.addEventListener("input", () => {
+            passwordCheck = false
+            resultShow.innerHTML = ""
+        })
+
+        // 비밀번호 확인
+        document.getElementById("inputPasswordCheckButton").addEventListener("click", () => {
+            let inputPasswordValue = inputPassword.value
+            let inputPasswordCheckValue = inputPasswordCheck.value
+
+            if (inputPasswordValue == inputPasswordCheckValue) {
+                resultShow.style.color = "green"
+                resultShow.innerHTML = "비밀번호가 일치합니다."
+                passwordCheck = true
+            } else {
+                resultShow.style.color = "red"
+                resultShow.innerHTML = "비밀번호가 일치하지 않습니다."
+                passwordCheck = false
+            }
+        })
+
+        let selectYear = document.getElementById("birthYear")
+        let selectMonth = document.getElementById("birthMonth")
+        let selectDate = document.getElementById("birthDate")
+
+        let now = new Date()
+
+        // 연도 옵션 추가
+        for (let i = 1900; i <= now.getFullYear(); i++) {
+            let yearOption = document.createElement("option")
+            yearOption.value = i
+            yearOption.innerHTML = i
+            selectYear.append(yearOption)
+        }
+
+        selectYear.value = now.getFullYear()
+
+        selectYear.addEventListener("change", setDate)
+
+        selectMonth.addEventListener("change", setDate)
+
+        setDate()
+
+        // 해당 연도, 월 마다 다른 날짜에 대한 세팅
+        function setDate() {
+            selectDate.innerHTML = ""
+            let yearValue = selectYear.value
+            let monthValue = selectMonth.value
+            let dateStr = yearValue + "-" + (monthValue + "").padStart(2, "0")
+            let lastDate = new Date(dateStr)
+            lastDate.setDate(lastDate.getDate() - 1)
+            for (let i = 1; i <= lastDate.getDate(); i++) {
+                let dateOption = document.createElement("option")
+                dateOption.value = i
+                dateOption.innerHTML = i
+                selectDate.append(dateOption)
+            }
+            selectDate.value = 1
+        }
+
+        // 회원가입 버튼
+        document.getElementById("registBtn").addEventListener("click", () => {
+            let inputIdValue = document.getElementById("inputId").value
+            let inputPwValue = document.getElementById("inputPassword").value
+            let inputNameValue = document.getElementById("inputName").value
+            let inputEmailValue = document.getElementById("inputEmail").value
+
+            let birthYearValue = document.getElementById("birthYear").value
+            let birthMonthValue = document.getElementById("birthMonth").value
+            let birthDateValue = document.getElementById("birthDate").value
+
+            // 모든 항목이 작성되었을 때
+            if (birthMonthValue) {
+                if (inputIdValue && inputNameValue && inputEmailValue && birthYearValue && birthMonthValue && birthDateValue) {
+                    let registJson = {
+                        "id": inputIdValue,
+                        "password": inputPwValue,
+                        "name": inputNameValue,
+                        "email": inputEmailValue,
+                        "bDate": birthYearValue + birthMonthValue.padStart(2, "0") + birthDateValue.padStart(2, "0")
+                    }
+                    localStorage.setItem("registEmail", inputEmailValue)
+                    localStorage.setItem("registInfo", JSON.stringify(registJson))
+
+                    // 이메일 인증을 보내는 url로 이동
+                    location.replace("./emailAuthSend.html")
+                } else {
+                    alert("작성되지 않은 목록이 있습니다.")
+                }
+            } else {
+                alert("비밀번호 확인을 해주세요.")
+            }
+        })
+
+        // 취소 버튼
+        document.getElementById("cancelBtn").addEventListener("click", () => location.replace("./index.html"))
+    </script>
+</body>
+
+</html>

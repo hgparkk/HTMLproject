@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아이디/비밀번호 찾기</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+    <script src="./resources/JS/service-key.js"></script>
+    <script>
+        firebase.initializeApp(firebaseConfig)
+    </script>
+
+    <link rel="stylesheet" href="./resources/CSS/userdoc.css">
+
+    <style>
+        .find-btn {
+            width: 40%;
+            margin-top: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(13, 110, 253);
+            color: white;
+        }
+
+        .find-cancel-btn {
+            width: 40%;
+            margin-top: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(108, 117, 125);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="userdoc-box">
+            <div class="userdoc-content">
+                <div class="userdoc-input-content">
+                    <div><span class="userdoc-text">이름</span></div>
+                    <div><span class="userdoc-text">이메일</span></div>
+                </div>
+                <div class="userdoc-input-content">
+                    <div><input id="inputNameforId" class="userdoc-input-text" type="text"></div>
+                    <div><input id="inputEmailforId" class="userdoc-input-text" type="email"></div>
+                </div>
+            </div>
+            <div class="userdoc-btn-div userdoc-div">
+                <div id="findidBtn" class="userdoc-btn userdoc-div-btn">아이디 찾기</div>
+            </div>
+            <div class="userdoc-content">
+                <div class="userdoc-input-content">
+                    <div><span class="userdoc-text">이름</span></div>
+                    <div><span class="userdoc-text">아이디</span></div>
+                    <div><span class="userdoc-text">이메일</span></div>
+                </div>
+                <div class="userdoc-input-content">
+                    <div><input id="inputNameforPw" class="userdoc-input-text" type="text"></div>
+                    <div><input id="inputIdforPw" class="userdoc-input-text" type="text"></div>
+                    <div><input id="inputEmailforPw" class="userdoc-input-text" type="text"></div>
+                </div>
+            </div>
+            <div class="userdoc-btn-div userdoc-div">
+                <div id="findpwBtn" class="find-btn userdoc-div-btn">비밀번호 찾기</div>
+            </div>
+            <div class="userdoc-btn-div userdoc-div">
+                <div id="findCancelBtn" class="find-cancel-btn userdoc-div-btn">취소</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const db = firebase.firestore()
+
+        // 아이디 찾기 버튼
+        document.getElementById("findidBtn").addEventListener("click", () => {
+            let inputNameValue = document.getElementById("inputNameforId").value
+            let inputEmailValue = document.getElementById("inputEmailforId").value
+
+            let result = null
+            db.collection("user").get()
+                .then((res) => {
+                    res.forEach((doc) => {
+                        let v_data = doc.data()
+                        if (inputNameValue == v_data["name"] && inputEmailValue == v_data["email"]) {
+                            result = v_data
+                        }
+                    })
+                    if (result) {
+                        alert("해당 아이디는 '" + result["id"] + "' 입니다.")
+                    } else {
+                        alert("해당 정보에 일치하는 데이터가 없습니다.")
+                    }
+                })
+                .catch((err) => console.error(err))
+        })
+
+        // 비밀번호 찾기 버튼
+        document.getElementById("findpwBtn").addEventListener("click", () => {
+            let inputNameValue = document.getElementById("inputNameforPw").value
+            let inputIdValue = document.getElementById("inputIdforPw").value
+            let inputEmailValue = document.getElementById("inputEmailforPw").value
+
+            if (!inputNameValue || !inputIdValue || !inputEmailValue) {
+                alert("해당 정보에 일치하는 데이터가 없습니다.")
+                return
+            }
+
+            let result = null
+            db.collection("user").doc(inputIdValue).get()
+                .then((res) => {
+                    let v_data = res.data()
+                    if (inputNameValue == v_data["name"] && inputEmailValue == v_data["email"]) {
+                        result = v_data
+                    }
+                    if (result) {
+                        location.href = "./resetPw.html?id=" + result["id"]
+                    } else {
+                        alert("해당 정보에 일치하는 데이터가 없습니다.")
+                    }
+                })
+                .catch((err) => {
+                    alert("해당 정보에 일치하는 데이터가 없습니다.")
+                })
+        })
+
+        // 취소 버튼
+        document.getElementById("findCancelBtn").addEventListener("click", () => location.replace("./login.html"))
+    </script>
+</body>
+
+</html>

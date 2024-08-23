@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>식단 목록</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+    <script src="./resources/JS/service-key.js"></script>
+    <script>
+        firebase.initializeApp(firebaseConfig)
+    </script>
+
+    <link rel="stylesheet" href="./resources/CSS/nav.css">
+
+    <style>
+        .head-content {
+            margin-top: 100px;
+
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .head-date {
+            margin-top: 10px;
+        }
+
+        .meals {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .short-cut {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 20px;
+            font-size: 15px;
+
+            background-color: rgb(13, 202, 240);
+            color: white;
+
+            text-align: center;
+        }
+
+        .meal-background {
+            width: 80%;
+        }
+
+        .meal-content {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid rgb(13, 110, 253);
+            font-size: 15px;
+        }
+
+        .meal-content-add-background {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .meal-content-add {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 20px;
+            background-color: rgb(13, 110, 253);
+            color: white;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .input-menu {
+            padding: 10px;
+            border-radius: 20px;
+            background-color: rgb(13, 110, 253);
+            color: white;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .fill-input-content {
+            margin: 5px;
+        }
+
+        .putted-menu-placeholder {
+            color: #E0E0E0;
+        }
+
+        .custom-input-div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .custom-input-item {
+            margin-top: 3px;
+            margin-bottom: 6px;
+            display: inline-block;
+        }
+
+        .custom-input-tags {
+            margin-top: 3px;
+            margin-bottom: 5px;
+        }
+
+        .direct-input-btn {
+            width: 120px;
+        }
+
+        .regist-div {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .regist-btn {
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(13, 110, 253);
+            color: white;
+            cursor: pointer;
+        }
+
+        .cancel-btn {
+            margin-left: 10px;
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(108, 117, 125);
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav-bar">
+        <div id="homeButton" class="nav-home-div">
+            <span>홈</span>
+        </div>
+        <div id="loginInfo">
+        </div>
+    </nav>
+    <div class="container">
+        <div class="head">
+            <div class="head-content">식단 목록</div>
+            <span id="currentDate" class="head-date">현재 날짜 : </span>
+        </div>
+        <div class="body">
+            <div class="meals">
+                <div class="meal-background">
+                    <div id="shortCut"></div>
+                </div>
+            </div>
+            <div class="meal-content-add-background">
+                <div class="meal-background">
+                    <div class="meal-content-add">식단 목록 추가</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let urlSearch = new URLSearchParams(location.search)
+        const db = firebase.firestore()
+
+        // 해당 인덱스에 데이터가 입력되었음을 알림
+        let dataFilled = []
+
+        // 해당 인덱스에 있는 데이터가 담김
+        let settedData = []
+
+        // 식단을 불러올때나 추가할 때 인덱스가 늘어남
+        let v_index = 0
+
+        // 직접 추가한 메뉴의 아이디를 위한 순번
+        let customMenuIndex = 0
+
+        let currentYear = urlSearch.get("year")
+        let currentMonth = urlSearch.get("month")
+        let currentDate = urlSearch.get("date")
+
+        let loginInfo = JSON.parse(sessionStorage.getItem("loginInfo"))
+
+        // 주소창 입력으로 들어오게 되면 첫 화면으로 돌아감
+        if (!currentYear || !currentMonth || !currentDate || !loginInfo) {
+            location.replace("./index.html")
+        }
+
+        // 선택된 일로 세팅
+        document.getElementById("currentDate").innerHTML += currentYear + "년 " + currentMonth + "월 " + currentDate + "일"
+
+        let dateStr = currentYear + "-" + currentMonth.padStart(2, "0") + "-" + currentDate.padStart(2, "0")
+
+        // 네비게이션 바
+
+        // 홈 버튼
+        document.getElementById("homeButton").addEventListener("click", () => location.href = "./index.html")
+
+        //로그인 정보
+        let loginInfoSet = document.getElementById("loginInfo")
+
+        let loginName = document.createElement("span")
+        loginName.innerHTML = loginInfo["name"] + " 님"
+        loginInfoSet.append(loginName)
+
+        let updateInfoButton = document.createElement("button")
+        updateInfoButton.style.marginLeft = "10px"
+        updateInfoButton.innerHTML = "회원 정보"
+        updateInfoButton.addEventListener("click", () => {
+            location.href = "./updateInfo.html"
+        })
+        loginInfoSet.append(updateInfoButton)
+
+        let logOutButton = document.createElement("button")
+        logOutButton.style.marginLeft = "10px"
+        logOutButton.innerHTML = "로그아웃"
+        logOutButton.addEventListener("click", () => {
+            sessionStorage.removeItem("loginInfo")
+            location.replace("./index.html")
+        })
+        loginInfoSet.append(logOutButton)
+
+        // 불러오거나 추가될 때 부착될 곳
+        let meals = document.querySelector(".meals")
+
+        // 데이터 합계
+        let shortCut = document.getElementById("shortCut")
+
+        let shortCutKcal = 0
+        let shortCutCarb = 0
+        let shortCutProt = 0
+        let shortCutFatce = 0
+
+        // 등록된 식단 불러오기
+        db.collection("food_data").doc(loginInfo["id"]).collection("date").doc(dateStr).collection("mealName").get()
+            .then((result1) => {
+                result1.forEach((doc1) => {
+                    let docId = doc1.id
+                    let mealName = doc1.data()["mealName"]
+                    db.collection("food_data").doc(loginInfo["id"]).collection("date").doc(dateStr).collection("mealName").doc(docId).collection("food_list").get()
+                        .then((result2) => {
+                            let foodList = []
+                            result2.forEach((doc2) => {
+                                foodList.push(doc2.data())
+                            })
+
+                            settedData[v_index] = foodList
+                            dataFilled[v_index] = true
+
+                            // 불러온 식단 추가
+
+                            // 전체 배경
+                            let addedMeal = document.createElement("div")
+                            addedMeal.classList.add("meal-background")
+
+                            // 추가된 식단에 대한 인덱스 담기
+                            let indexInput = document.createElement("input")
+                            indexInput.setAttribute("type", "hidden")
+                            indexInput.value = v_index++
+                            addedMeal.append(indexInput)
+
+                            // 항목들이 들어갈 곳
+                            let addedMealContent = document.createElement("div")
+                            addedMealContent.classList.add("meal-content")
+
+                            // 식단 이름 (첫번째 줄)
+                            let mealNameLine1 = document.createElement("div")
+                            mealNameLine1.classList.add("fill-input-content")
+                            mealNameLine1.innerHTML = "식단 이름 : " + mealName
+                            addedMealContent.append(mealNameLine1)
+                            addedMealContent.append(document.createElement("div").innerHTML = "　")
+
+                            // 입력된 메뉴 (두번째 줄)
+                            let mealNameLine2 = document.createElement("div")
+                            mealNameLine2.classList.add("fill-input-content")
+                            mealNameLine2.innerHTML = "메뉴"
+                            addedMealContent.append(mealNameLine2)
+
+                            let sumKcal = 0
+                            let sumCarb = 0
+                            let sumProt = 0
+                            let sumFatce = 0
+
+                            for (let i of foodList) {
+                                let currentWeight = parseInt(i["weight"]) / 100.0
+                                let currentKcal = Math.floor(parseInt(i["kcal"]) * currentWeight * 100) / 100
+                                let currentCarb = Math.floor(parseInt(i["carb"]) * currentWeight * 100) / 100
+                                let currentProt = Math.floor(parseInt(i["prot"]) * currentWeight * 100) / 100
+                                let currentFatce = Math.floor(parseInt(i["fatce"]) * currentWeight * 100) / 100
+
+                                sumKcal += currentKcal
+                                sumCarb += currentCarb
+                                sumProt += currentProt
+                                sumFatce += currentFatce
+
+                                let foodContent = document.createElement("div")
+                                foodContent.classList.add("fill-input-content")
+                                foodContent.innerHTML = i["name"] + "(" + i["weight"] + "g) =" + " 열량 : " + currentKcal + "kcal, 탄수화물 : " + currentCarb + "g, 단백질 : " + currentProt + "g, 지방 :" + currentFatce + "g"
+                                addedMealContent.append(foodContent)
+                            }
+                            shortCutKcal += sumKcal
+                            shortCutCarb += sumCarb
+                            shortCutProt += sumProt
+                            shortCutFatce += sumFatce
+                            addedMealContent.append(document.createElement("div").innerHTML = "　")
+
+                            // 식단의 총합
+                            let total = document.createElement("div")
+                            total.classList.add("fill-input-content")
+                            total.innerHTML = "총 열량 : " + sumKcal + "kcal, 총 탄수화물 : " + sumCarb + "g, 총 단백질 : " + sumProt + "g, 총 지방 : " + sumFatce + "g"
+                            addedMealContent.append(total)
+
+                            let registDiv = document.createElement("div")
+                            registDiv.classList.add("regist-div")
+
+                            let updateBtn = document.createElement("span")
+                            updateBtn.classList.add("regist-btn")
+                            updateBtn.innerHTML = "식단 수정"
+                            updateBtn.addEventListener("click", () => { drawmealContent(true) })
+                            registDiv.append(updateBtn)
+                            addedMealContent.append(registDiv)
+
+                            addedMeal.append(addedMealContent)
+                            meals.append(addedMeal)
+
+                            shortCut.classList.add("short-cut")
+                            shortCut.innerHTML = currentYear + "년 " + currentMonth + "월 " + currentDate + "일의 총 합"
+                                + " = 열량 : " + Math.floor(shortCutKcal * 100) / 100
+                                + "kcal, 탄수화물 : " + Math.floor(shortCutCarb * 100) / 100
+                                + "g, 단백질 : " + Math.floor(shortCutProt * 100) / 100
+                                + "g, 지방 : " + Math.floor(shortCutFatce * 100) / 100
+                                + "g"
+                        })
+                        .catch((err) => console.error(err))
+                })
+            })
+            .catch((err) => console.error(err))
+        let mealContentAdd = document.querySelector(".meal-content-add")
+        mealContentAdd.addEventListener("click", () => { drawmealContent(false) })
+
+        // 식단 작성 창 그리기
+        function drawmealContent(reset) {
+            let content = null
+            let contentParent = null
+            let mealName = null
+            let index = null
+            let dataList = null
+
+            let addedMeal = null
+            let indexInput = null
+            if (reset) {
+                content = event.target.parentElement.parentElement
+                contentParent = content.parentElement
+                mealName = content.children[0].innerHTML
+                index = event.target.parentElement.parentElement.parentElement.children[0].value
+                dataList = settedData[index]
+                content.remove()
+            } else {
+                // 전체 배경
+                addedMeal = document.createElement("div")
+                addedMeal.classList.add("meal-background")
+
+                // 추가된 식단에 대한 인덱스 담기
+                indexInput = document.createElement("input")
+                indexInput.setAttribute("type", "hidden")
+                indexInput.value = v_index++
+                addedMeal.append(indexInput)
+            }
+
+            // 항목들이 들어갈 곳
+            let addedMealContent = document.createElement("div")
+            addedMealContent.classList.add("meal-content")
+
+
+            // 식단 이름 (첫번째 줄)
+            let mealNameLine1 = document.createElement("div")
+            mealNameLine1.classList.add("fill-input-content")
+            if (reset) {
+                mealNameLine1.innerHTML = mealName
+            } else {
+                mealNameLine1.innerHTML = "식단 이름 :"
+
+                // 식단 이름에 대한 셀렉트 박스 설정
+                let mealNameSelectedBox = document.createElement("select")
+                mealNameSelectedBox.name = "mealName"
+                mealNameSelectedBox.classList.add("fill-input-content")
+                mealNameSelectedBox.addEventListener("change", setCustom)
+
+                let option1 = document.createElement("option")
+                option1.value = "아침"
+                option1.innerHTML = "아침"
+                mealNameSelectedBox.append(option1)
+
+                let option2 = document.createElement("option")
+                option2.value = "점심"
+                option2.innerHTML = "점심"
+                mealNameSelectedBox.append(option2)
+
+                let option3 = document.createElement("option")
+                option3.value = "저녁"
+                option3.innerHTML = "저녁"
+                mealNameSelectedBox.append(option3)
+
+                let option4 = document.createElement("option")
+                option4.value = "custom"
+                option4.innerHTML = "직접입력"
+                mealNameSelectedBox.append(option4)
+                mealNameLine1.append(mealNameSelectedBox)
+            }
+            addedMealContent.append(mealNameLine1)
+
+            // 입력된 메뉴 (두번째 줄)
+            let mealNameLine2 = document.createElement("div")
+            mealNameLine2.classList.add("fill-input-content")
+            if (reset) {
+                for (let i of dataList) {
+                    mealNameLine2.innerHTML += '<div><span>' + i["name"] + ' : ' + i["weight"] + 'g</span>'
+                        + '<input type="hidden" value="' + i["key"] + '">'
+                        + '<button style="margin-left:10px" onclick="deleteData()">삭제</button></div>'
+                }
+            } else {
+                mealNameLine2.classList.add("putted-menu-placeholder")
+                mealNameLine2.innerHTML = "입력된 메뉴가 이곳에 입력됩니다."
+            }
+            addedMealContent.append(mealNameLine2)
+
+            // db에 등록된 메뉴 중에서 찾기에 대한 설명 (세번째 줄)
+            let mealNameLine3 = document.createElement("div")
+            mealNameLine3.classList.add("fill-input-content")
+            mealNameLine3.innerHTML = "메뉴 찾기 :"
+
+            addedMealContent.append(mealNameLine3)
+
+            // db에 등록된 메뉴 중에서 찾기 (네번째 줄)
+            let mealNameLine4 = document.createElement("div")
+            mealNameLine4.classList.add("fill-input-content")
+
+            // db에 등록된 메뉴가 선택되면 그 메뉴가 들어갈 곳
+            let readonlyInput = document.createElement("input")
+            readonlyInput.setAttribute("type", "text")
+            readonlyInput.readOnly = true
+            mealNameLine4.append(readonlyInput)
+
+            // db에 등록된 메뉴에서 찾기
+            let searchBtn = document.createElement("button")
+            searchBtn.classList.add("fill-input-content")
+            searchBtn.innerHTML = "찾기"
+            searchBtn.addEventListener("click", findMenuFromDB)
+            mealNameLine4.append(searchBtn)
+
+            addedMealContent.append(mealNameLine4)
+
+            // 사용자가 메뉴 직접 입력
+            let mealNameLine5 = document.createElement("div")
+            mealNameLine5.classList.add("fill-input-content")
+            mealNameLine5.classList.add("custom-input-div")
+
+            let customMenuBtn = document.createElement("button")
+            customMenuBtn.classList.add("direct-input-btn")
+            customMenuBtn.addEventListener("click", directMenuInput)
+            customMenuBtn.innerHTML = "메뉴 직접 입력"
+            mealNameLine5.append(customMenuBtn)
+
+            addedMealContent.append(mealNameLine5)
+
+            // 최종 등록 버튼과 취소 버튼 (다섯번째 줄)
+            let registDiv = document.createElement("div")
+            registDiv.classList.add("regist-div")
+
+            let finalRegistBtn = document.createElement("span")
+            finalRegistBtn.classList.add("regist-btn")
+            if (reset) {
+                finalRegistBtn.addEventListener("click", () => {
+                    updateMeal(dataList)
+                })
+                finalRegistBtn.innerHTML = "수정"
+            } else {
+                finalRegistBtn.addEventListener("click", addMeal)
+                finalRegistBtn.innerHTML = "식단 등록"
+            }
+            registDiv.append(finalRegistBtn)
+
+            let cancelBtn = document.createElement("span")
+            cancelBtn.classList.add("cancel-btn")
+            cancelBtn.addEventListener("click", cancel)
+            cancelBtn.innerHTML = "취소"
+            registDiv.append(cancelBtn)
+
+            if (reset) {
+                let removeBtn = document.createElement("span")
+                removeBtn.classList.add("cancel-btn")
+                removeBtn.addEventListener("click", removeMeal)
+                removeBtn.innerHTML = "삭제"
+                registDiv.append(removeBtn)
+            }
+
+            addedMealContent.append(registDiv)
+
+            if (reset) {
+                contentParent.append(addedMealContent)
+            } else {
+                addedMeal.append(addedMealContent)
+                meals.append(addedMeal)
+            }
+
+            setTimeout(() => mealContentAdd.removeEventListener("click", () => { drawmealContent(false) }), 10)
+        }
+
+        // 식단 이름을 직접 지정하고자 할 때
+        function setCustom() {
+            if (event.target.value == "custom") {
+                let customInput = document.createElement("input")
+                customInput.classList.add("search-menu")
+                customInput.setAttribute("type", "text")
+                event.target.parentElement.append(customInput)
+            }
+            else {
+                let v_parent = event.target.parentElement.children[1]
+                if (v_parent) {
+                    v_parent.remove()
+                }
+            }
+        }
+
+        // db에서 메뉴 찾기
+        function findMenuFromDB() {
+            let menuIndex = event.target.parentElement.parentElement.parentElement.children[0].value
+            open("./findMenuFromDB.html?index=" + menuIndex, "", "width=400,height=600,left=0,top=0")
+        }
+
+        // 메뉴를 직접 입력하고자 할 때
+        function directMenuInput() {
+            let parentLoc = event.target.parentElement
+            let customDiv = document.createElement("div")
+            customDiv.style.display = "flex"
+            customDiv.classList = "custom-input-item"
+
+            let contentNames = document.createElement("div")
+            contentNames.classList.add("direct-input-div")
+            contentNames.innerHTML = '<div>　</div>'
+                + '<div><span class="custom-input-item">메뉴이름</span></div>'
+                + '<div><span class="custom-input-item">열량</span></div>'
+                + '<div><span class="custom-input-item">탄수화물</span></div>'
+                + '<div><span class="custom-input-item">단백질</span></div>'
+                + '<div><span class="custom-input-item">지방</span></div>'
+                + '<div><span class="custom-input-item">중량</span></div>'
+                + '<div><button class="custom-input-item" onclick="customMenuRegist()">등록</button></div>'
+            customDiv.append(contentNames)
+
+            let contentInputs = document.createElement("div")
+            contentInputs.classList.add("direct-input-div")
+            contentInputs.innerHTML = '<div>메뉴의 칼로리, 탄수화물, 단백질, 지방은 100g 기준입니다</div>'
+                + '<div><input class="custom-input-tags" type="text"></div>'
+                + '<div><input class="custom-input-tags" type="number">(kcal)</div>'
+                + '<div><input class="custom-input-tags" type="number">(g)</div>'
+                + '<div><input class="custom-input-tags" type="number">(g)</div>'
+                + '<div><input class="custom-input-tags" type="number">(g)</div>'
+                + '<div><input class="custom-input-tags" type="number">(g)</div>'
+                + '<div><button class="custom-input-item" onclick="customMenuCancel()">취소</button></div>'
+            customDiv.append(contentInputs)
+
+            parentLoc.prepend(customDiv)
+        }
+
+        // db에서 선택한 메뉴 불러오기
+        function getdataFromDB(menuIndex, response) {
+            let mealArray = document.querySelectorAll(".meal-background")
+            let currentMeals = null
+            for (let i of mealArray) {
+                if (i.children[0].value == menuIndex) {
+                    currentMeals = i
+                }
+            }
+            let currentSearchedMenu = currentMeals.children[1].children[3].children[0]
+            currentSearchedMenu.value = response["name"]
+
+            if (!currentSearchedMenu.parentElement.children[2]) {
+                // db에서 선택한 메뉴의 중량 붙이기
+                let weightText = document.createElement("span")
+                weightText.innerHTML = "중량 : "
+                currentSearchedMenu.parentElement.append(weightText)
+
+                let weightInput = document.createElement("input")
+                weightInput.setAttribute("type", "number")
+                currentSearchedMenu.parentElement.append(weightInput)
+
+                // db에서 선택한 메뉴 최종 등록 버튼
+                let registBtn = document.createElement("button")
+                registBtn.classList.add("fill-input-content")
+                registBtn.innerHTML = "등록"
+                registBtn.addEventListener("click", () => {
+                    let v_datafield = event.target.parentElement.parentElement.children[1]
+                    let weightValue = event.target.parentElement.children[3].value
+                    if (weightValue) {
+                        response["weight"] = weightValue
+                        if (!dataFilled[menuIndex]) {
+                            dataFilled[menuIndex] = true
+                            v_datafield.classList.remove("putted-menu-placeholder")
+                            v_datafield.innerHTML = "메뉴 목록 : "
+                            settedData[menuIndex] = []
+                        }
+                        v_datafield.innerHTML += '<div><span>' + response["name"] + ' : ' + response["weight"] + 'g</span>'
+                            + '<input type="hidden" value="' + response["key"] + '">'
+                            + '<button style="margin-left:10px" onclick="deleteData()">삭제</button></div>'
+                        settedData[menuIndex].push(response)
+                        event.target.parentElement.children[0].value = ""
+                        event.target.parentElement.children[2].remove()
+                        event.target.parentElement.children[2].remove()
+                        event.target.parentElement.children[2].remove()
+                    }
+                })
+
+                currentSearchedMenu.parentElement.append(registBtn)
+            }
+        }
+
+        // 직접 입력한 메뉴 등록
+        function customMenuRegist() {
+            let v_inputDiv = event.target.parentElement.parentElement.parentElement.children[1]
+            let dataJson = {
+                "key": (customMenuIndex++ + ""),
+                "name": v_inputDiv.children[1].children[0].value,
+                "kcal": v_inputDiv.children[2].children[0].value,
+                "carb": v_inputDiv.children[3].children[0].value,
+                "prot": v_inputDiv.children[4].children[0].value,
+                "fatce": v_inputDiv.children[5].children[0].value,
+                "weight": v_inputDiv.children[6].children[0].value
+            }
+            let current_index = event.target.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.children[0].value
+            let v_datafield = event.target.parentElement.parentElement.parentElement.parentElement.parentElement.children[1]
+
+            if (dataJson["name"] && dataJson["kcal"] && dataJson["carb"] && dataJson["prot"] && dataJson["fatce"] && dataJson["weight"]) {
+                if (!dataFilled[current_index]) {
+                    dataFilled[current_index] = true
+                    v_datafield.classList.remove("putted-menu-placeholder")
+                    v_datafield.innerHTML = "메뉴 목록 : "
+                    settedData[current_index] = []
+                }
+                v_datafield.innerHTML += '<div><span>' + dataJson["name"] + ' : ' + dataJson["weight"] + 'g</span>'
+                    + '<input type="hidden" value="' + dataJson["key"] + '">'
+                    + '<button style="margin-left:10px" onclick="deleteData()">삭제</button></div>'
+                settedData[current_index].push(dataJson)
+                event.target.parentElement.parentElement.parentElement.remove()
+            } else {
+                alert("입력되지 않은 항목이 있습니다.")
+            }
+        }
+
+        // 메뉴 직접 입력 취소
+        function customMenuCancel() {
+            event.target.parentElement.parentElement.parentElement.remove()
+        }
+
+        // 선택된 메뉴 목록에서 삭제
+        function deleteData() {
+            let menuIndex = event.target.parentElement.parentElement.parentElement.parentElement.children[0].value
+            let itemIndex = event.target.parentElement.children[1].value
+
+            for (let i = 0; i < settedData[menuIndex].length; i++) {
+                if (settedData[menuIndex][i]["key"] == itemIndex) {
+                    settedData[menuIndex].splice(i, 1)
+                }
+            }
+
+            event.target.parentElement.remove()
+        }
+
+        // 작성한 식단 db에 입력
+        function addMeal() {
+            if (confirm("식단을 등록하시겠습니까? \n중복된 식단 이름은 기존 데이터를 덮어 씁니다")) {
+                let mealName = event.target.parentElement.parentElement.children[0].children[0].value
+                if (mealName == "custom") {
+                    mealName = event.target.parentElement.parentElement.children[0].children[1].value
+                }
+                let currentIndex = event.target.parentElement.parentElement.parentElement.children[0].value
+
+                for (let i of settedData[currentIndex]) {
+                    console.log(i)
+                    let currentData = {
+                        "key": i["key"],
+                        "name": i["name"],
+                        "kcal": i["kcal"],
+                        "carb": i["carb"],
+                        "prot": i["prot"],
+                        "fatce": i["fatce"],
+                        "weight": i["weight"]
+                    }
+
+                    db.collection("food_data").doc(loginInfo["id"]).set({ "id": loginInfo["id"] })
+                        .then(() => {
+                            db.collection("food_data").doc(loginInfo["id"])
+                                .collection("date").doc(dateStr).set({ "date": dateStr })
+                                .then(() => {
+                                    db.collection("food_data").doc(loginInfo["id"])
+                                        .collection("date").doc(dateStr)
+                                        .collection("mealName").doc(mealName).set({ "mealName": mealName })
+                                        .then(() => {
+                                            db.collection("food_data").doc(loginInfo["id"])
+                                                .collection("date").doc(dateStr)
+                                                .collection("mealName").doc(mealName)
+                                                .collection("food_list").doc(currentData["key"]).set(currentData)
+                                                .then(() => {
+                                                    setTimeout(() => history.go(0), 10)
+                                                })
+                                                .catch((err) => console.error(err))
+                                        })
+                                })
+                                .catch((err) => console.error(err))
+                        })
+                        .catch((err) => console.error(err))
+                }
+            }
+        }
+
+        // 식단 수정 함수
+
+        // 식단 수정
+        function updateMeal(originData) {
+            if (confirm("식단을 수정하시겠습니까?")) {
+                let v_content = event.target.parentElement.parentElement.parentElement
+                let currentIndex = v_content.children[0].value
+                let mealName = event.target.parentElement.parentElement.children[0].innerHTML
+                mealName = mealName.replace("식단 이름 : ", "")
+
+                // 식단 수정을 위해 기존 문서의 컬렉션 내부 문서들을 전부 삭제한다.
+                for (let i = 0; i < originData.length; i++) {
+                    db.collection("food_data").doc(loginInfo["id"]).collection("date").doc(dateStr).collection("mealName").doc(mealName).collection("food_list").doc(originData[i]["key"]).delete()
+                        .then(() => {
+                            if (i + 1 == originData.length) {
+                                for (let j = 0; j < settedData[currentIndex].length; j++) {
+                                    let currentData = {
+                                        "key": settedData[currentIndex][j]["key"],
+                                        "name": settedData[currentIndex][j]["name"],
+                                        "kcal": settedData[currentIndex][j]["kcal"],
+                                        "carb": settedData[currentIndex][j]["carb"],
+                                        "prot": settedData[currentIndex][j]["prot"],
+                                        "fatce": settedData[currentIndex][j]["fatce"],
+                                        "weight": settedData[currentIndex][j]["weight"]
+                                    }
+                                    db.collection("food_data").doc(loginInfo["id"]).collection("date").doc(dateStr).collection("mealName").doc(mealName).collection("food_list").doc(currentData["key"]).set(currentData)
+                                        .then(() => {
+                                            if (j + 1 == settedData[currentIndex].length) {
+                                                alert("식단이 수정되었습니다.")
+                                                history.go(0)
+                                            }
+                                        })
+                                        .catch((err) => {
+                                            console.error(err)
+                                        })
+                                }
+                            }
+                        })
+                        .catch((err) => {
+                            console.error(err)
+                        })
+                }
+            }
+        }
+
+        // 식단 삭제
+        function removeMeal(originData) {
+            if (confirm("식단을 삭제하시겠습니까?")) {
+                let v_content = event.target.parentElement.parentElement.parentElement
+                let v_index = v_content.children[0].value
+                let v_data = settedData[v_index]
+                let mealName = event.target.parentElement.parentElement.children[0].innerHTML
+                mealName = mealName.replace("식단 이름 : ", "")
+
+                for (let i = 0; i < v_data.length; i++) {
+                    db.collection("food_data").doc(loginInfo["id"]).collection("date").doc(dateStr).collection("mealName").doc(mealName).collection("food_list").doc(v_data[i]["key"]).delete()
+                        .then(() => {
+                            if (i + 1 == v_data.length) {
+                                db.collection("food_data").doc(loginInfo["id"]).collection("date").doc(dateStr).collection("mealName").doc(mealName).delete()
+                                    .then(() => {
+                                        alert("식단 삭제가 완료되었습니다.")
+                                        history.go(0)
+                                    })
+                                    .catch((err) => {
+                                        console.error(err)
+                                    })
+                            }
+                        })
+                        .catch((err) => {
+                            console.error(err)
+                        })
+                }
+            }
+        }
+
+        // 수정 및 작성 취소 (사실 새로고침이다)
+        function cancel() {
+            history.go(0)
+        }
+    </script>
+</body>
+
+</html>

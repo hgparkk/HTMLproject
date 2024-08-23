@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>비밀번호 초기화</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+    <script src="./resources/JS/service-key.js"></script>
+    <script>
+        firebase.initializeApp(firebaseConfig)
+    </script>
+
+    <link rel="stylesheet" href="./resources/CSS/userdoc.css">
+
+    <style>
+        .reset-pw-btn {
+            width: 80%;
+            margin-top: 5px;
+            margin-right: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(13, 110, 253);
+            color: white;
+        }
+
+        .reset-pw-cancel-btn {
+            width: 80%;
+            margin-top: 5px;
+            margin-left: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(108, 117, 125);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="userdoc-box">
+            <div class="userdoc-content">
+                <div class="userdoc-input-content">
+                    <div><span class="userdoc-text">새 비밀번호 </span></div>
+                    <div><span class="userdoc-text">비밀번호 확인</span></div>
+                    <div><span style="margin:10px">　</span></div>
+                </div>
+                <div class="userdoc-input-content">
+                    <div><input id="resetPw" class="userdoc-input-text" type="password"></div>
+                    <div><input id="resetPwCheck" class="userdoc-input-text" type="password">
+                        <button id="inputPasswordCheckButton" style="margin:10px">확인</button>
+                    </div>
+                    <div><span id="resetTestResult" style="margin:10px">　</span></div>
+                </div>
+            </div>
+            <div class="userdoc-btn-div userdoc-div">
+                <div id="resetBtn" class="reset-pw-btn userdoc-div-btn">비밀번호 설정</div>
+                <div id="cancelBtn" class="reset-pw-cancel-btn userdoc-div-btn">취소</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let urlSearch = new URLSearchParams(location.search)
+
+        // 주소창 입력으로 들어오게 되면 첫 화면으로 돌아감
+        if (!urlSearch.get("id")) {
+            location.replace("./index.html")
+        }
+
+        const db = firebase.firestore()
+
+        let inputPassword = document.getElementById("resetPw")
+        let inputPasswordCheck = document.getElementById("resetPwCheck")
+        let resultShow = document.getElementById("resetTestResult")
+
+        // 비밀번호 확인 여부
+        let passwordCheck = false
+
+        // 비밀번호를 입력할 때 마다 확인 여부는 false 가 된다
+        inputPassword.addEventListener("input", () => {
+            passwordCheck = false
+            resultShow.innerHTML = ""
+        })
+        inputPasswordCheck.addEventListener("input", () => {
+            passwordCheck = false
+            resultShow.innerHTML = ""
+        })
+
+        // 비밀번호 확인
+        document.getElementById("inputPasswordCheckButton").addEventListener("click", () => {
+            let inputPasswordValue = inputPassword.value
+            let inputPasswordCheckValue = inputPasswordCheck.value
+
+            if (inputPasswordValue == inputPasswordCheckValue) {
+                resultShow.style.color = "green"
+                resultShow.innerHTML = "비밀번호가 일치합니다."
+                passwordCheck = true
+            } else {
+                resultShow.style.color = "red"
+                resultShow.innerHTML = "비밀번호가 일치하지 않습니다."
+                passwordCheck = false
+            }
+        })
+
+        //설정 버튼
+        document.getElementById("resetBtn").addEventListener("click", () => {
+            if (passwordCheck) {
+                let inputPasswordValue = inputPassword.value
+
+                let resetInfo = {
+                    "password": inputPasswordValue
+                }
+
+                db.collection("user").doc(urlSearch.get("id")).update(resetInfo)
+                    .then(() => {
+                        alert("비밀번호가 설정되었습니다.")
+                        location.replace("./login.html")
+                    })
+                    .catch((err) => console.error(err))
+            } else {
+                alert("비밀번호 확인이 필요합니다.")
+            }
+        })
+
+        // 취소 버튼
+        document.getElementById("cancelBtn").addEventListener("click", () => location.replace("./login.html"))
+    </script>
+</body>
+
+</html>

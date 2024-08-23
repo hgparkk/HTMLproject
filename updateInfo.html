@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원 정보</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+    <script src="./resources/JS/service-key.js"></script>
+    <script>
+        firebase.initializeApp(firebaseConfig)
+    </script>
+
+    <link rel="stylesheet" href="./resources/CSS/userdoc.css">
+
+    <style>
+        .update-btn {
+            width: 40%;
+            margin-top: 5px;
+            margin-right: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(13, 110, 253);
+            color: white;
+        }
+
+        .update-cancel-btn {
+            width: 40%;
+            margin-top: 5px;
+            margin-left: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(108, 117, 125);
+            color: white;
+        }
+
+        .resign-btn {
+            margin: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="userdoc-box">
+            <div class="userdoc-content">
+                <div class="userdoc-input-content">
+                    <div><span class="userdoc-text">아이디</span></div>
+                    <div><span class="userdoc-text">비빌번호</span></div>
+                    <div><span class="userdoc-text">비빌번호 확인</span></div>
+                    <div><span style="margin:10px">　</span></div>
+                    <div><span class="userdoc-text">이름</span></div>
+                    <div><span class="userdoc-text">이메일</span></div>
+                    <div><span class="userdoc-text">생년월일</span></div>
+                </div>
+                <div class="userdoc-input-content">
+                    <div><input id="inputId" class="userdoc-input-text" type="text" readonly></div>
+                    <div><input id="inputPassword" class="userdoc-input-text" type="password"></div>
+                    <div><input id="inputPasswordCheck" class="userdoc-input-text" type="password">
+                        <button id="inputPasswordCheckButton" style="margin:10px">확인</button>
+                    </div>
+                    <div><span id="updateTestResult" style="margin:10px">　</span></div>
+                    <div><input id="inputName" class="userdoc-input-text" type="text" readonly></div>
+                    <div><input id="inputEmail" class="userdoc-input-text" type="email" readonly></div>
+                    <div><input id="inputBirth" class="userdoc-input-text" type="text" readonly></div>
+                </div>
+            </div>
+            <div class="userdoc-btn-div userdoc-div">
+                <div id="updateBtn" class="update-btn userdoc-div-btn">비밀번호 변경</div>
+                <div id="cancelBtn" class="update-cancel-btn userdoc-div-btn">취소</div>
+            </div>
+            <div class="userdoc-btn-div userdoc-div">
+                <span id="resignBtn" class="resign-btn userdoc-div-btn">회원탈퇴</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let loginInfo = JSON.parse(sessionStorage.getItem("loginInfo"))
+        const db = firebase.firestore()
+
+        // 주소창 입력으로 들어오게 되면 첫 화면으로 돌아감
+        if (!loginInfo) {
+            location.replace("./index.html")
+        }
+
+        document.getElementById("inputId").value = loginInfo["id"]
+
+        document.getElementById("inputName").value = loginInfo["name"]
+        document.getElementById("inputEmail").value = loginInfo["email"]
+        document.getElementById("inputBirth").value = loginInfo["bDate"]
+
+        let inputPassword = document.getElementById("inputPassword")
+        let inputPasswordCheck = document.getElementById("inputPasswordCheck")
+        let resultShow = document.getElementById("updateTestResult")
+
+        // 비밀번호 확인 여부
+        let passwordCheck = false
+
+        // 비밀번호를 입력할 때 마다 확인 여부는 false 가 된다
+        inputPassword.addEventListener("input", () => {
+            passwordCheck = false
+            resultShow.innerHTML = ""
+        })
+        inputPasswordCheck.addEventListener("input", () => {
+            passwordCheck = false
+            resultShow.innerHTML = ""
+        })
+
+        // 비밀번호 확인
+        document.getElementById("inputPasswordCheckButton").addEventListener("click", () => {
+            let inputPasswordValue = inputPassword.value
+            let inputPasswordCheckValue = inputPasswordCheck.value
+
+            if (inputPasswordValue == inputPasswordCheckValue) {
+                resultShow.style.color = "green"
+                resultShow.innerHTML = "비밀번호가 일치합니다."
+                passwordCheck = true
+            } else {
+                resultShow.style.color = "red"
+                resultShow.innerHTML = "비밀번호가 일치하지 않습니다."
+                passwordCheck = false
+            }
+        })
+
+        document.getElementById("updateBtn").addEventListener("click", () => {
+            if (passwordCheck) {
+                let inputPasswordValue = inputPassword.value
+
+                let updateDate = {
+                    "password": inputPasswordValue
+                }
+
+                db.collection("user").doc(loginInfo["id"]).update(updateDate)
+                    .then(() => {
+                        alert("비밀번호가 변경되었습니다.")
+                        loginInfo["password"] = inputPasswordValue
+                        sessionStorage.setItem("loginInfo", JSON.stringify(loginInfo))
+                        location.replace("./index.html")
+                    })
+                    .catch((err) => console.error(err))
+            } else {
+                alert("비밀번호 확인이 필요합니다.")
+            }
+        })
+
+        document.getElementById("cancelBtn").addEventListener("click", () => {
+            location.href = "./index.html"
+        })
+
+        document.getElementById("resignBtn").addEventListener("click", () => {
+            if (confirm("정말 회원탈퇴를 하시겠습니까? \n(회원 탈퇴시 탈퇴된 아이디는 복구할 수 없습니다.)")) {
+                db.collection("user").doc(loginInfo["id"]).delete()
+                    .then((result) => {
+                        sessionStorage.removeItem("loginInfo")
+                        alert("회원 탈퇴가 완료되었습니다.")
+                        location.replace("./index.html")
+                    })
+                    .catch((err) => {
+                        console.error(err)
+                    })
+            }
+        })
+    </script>
+</body>
+
+</html>

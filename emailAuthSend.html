@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이메일 인증 요청</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+    <script src="./resources/JS/service-key.js"></script>
+    <script>
+        firebase.initializeApp(firebaseConfig)
+    </script>
+
+    <link rel="stylesheet" href="./resources/CSS/userdoc.css">
+
+    <style>
+        .auth-text {
+            display: inline-block;
+            font-size: 20px;
+            margin: 13px;
+            text-align: center;
+        }
+
+        .auth-button-div {
+            text-align: center;
+            margin: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="userdoc-box">
+            <span class="auth-text">
+                이메일 인증 요청을 보냈습니다!
+            </span>
+            <span class="auth-text">
+                이메일 인증 완료시 회원가입이 완료됩니다
+            </span>
+            <div class="auth-button-div">
+                <button id="gohome">홈으로 돌아가기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        firebase.auth().languageCode = "ko"
+
+        var actionCodeSettings = {
+            // 인증 버튼 클릭시 이동될 페이지 URL
+            url: 'http://127.0.0.1:5500/emailAuthCheck.html',
+            handleCodeInApp: true
+        };
+
+        let v_inputEmail = localStorage.getItem("registEmail")
+
+        // 주소창 입력으로 들어오게 되면 첫 화면으로 돌아감
+        if (!v_inputEmail) {
+            location.replace("./index.html")
+        }
+
+        // 인증 이메일을 보냄
+        firebase.auth().sendSignInLinkToEmail(v_inputEmail, actionCodeSettings)
+            .then(() => {
+            })
+            .catch((err) => {
+                var errorCode = err.code;
+                var errorMessage = err.message;
+                console.error(errorCode + ", " + errorMessage)
+            });
+
+
+        document.getElementById("gohome").addEventListener("click", () => location.replace("./index.html"))
+    </script>
+</body>
+
+</html>

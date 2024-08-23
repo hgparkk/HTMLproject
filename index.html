@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 식단</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+    <script src="./resources/JS/service-key.js"></script>
+    <script>
+        firebase.initializeApp(firebaseConfig)
+    </script>
+
+    <link rel="stylesheet" href="./resources/CSS/nav.css">
+
+    <style>
+        .year {
+            margin-top: 100px;
+
+            transform: translate(40%, 0);
+            display: flex;
+            align-items: center;
+        }
+
+        .year-content {
+            font-size: 30px;
+        }
+
+        .year-select {
+            font-size: 25px;
+            margin-left: 10px;
+            margin-right: 60px;
+            visibility: hidden;
+        }
+
+        .year-set-btn {
+            padding: 10px;
+
+            background-color: rgb(13, 110, 253);
+            color: white;
+            border-radius: 10px;
+
+            cursor: pointer;
+        }
+
+        .months {
+            margin-top: 50px;
+            width: 80%;
+
+            display: flex;
+            justify-content: space-evenly;
+        }
+
+        .month {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            cursor: pointer;
+        }
+
+        .month-selected {
+            background-color: rgb(13, 110, 253);
+            color: white;
+            transition-duration: 0.4s;
+        }
+
+        .dates {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .date {
+            width: 100%;
+            height: 50px;
+
+            transition-duration: 0.4s;
+
+            position: relative;
+        }
+
+        .date-contents {
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid #F0F0F0;
+            cursor: pointer;
+
+            transition-duration: 0.4s;
+        }
+
+        .date-contents-invalid {
+            padding: 10px;
+            border-radius: 20px;
+            background-color: #F0F0F0;
+            cursor: default;
+        }
+
+        .meal-box {
+            height: 350px;
+            overflow: hidden;
+        }
+
+        .meal-line {
+            margin: 10px;
+        }
+
+        .date-data {
+            margin-top: 10px;
+            height: 400px;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid #F0F0F0;
+        }
+
+        .write-btn {
+            bottom: 50px;
+            right: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(13, 110, 253);
+            color: white;
+            position: absolute;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav-bar">
+        <div id="homeButton" class="nav-home-div">
+            <span>홈</span>
+        </div>
+        <div id="loginInfo">
+        </div>
+    </nav>
+    <div class="container">
+        <div class="head">
+            <div class="year">
+                <span class="year-content"></span>
+                <select id="yearSelect" class="year-select">
+                </select>
+                <span class="year-set-btn">연도 변경</span>
+            </div>
+            <div class="months">
+                <span class="month">1월</span>
+                <span class="month">2월</span>
+                <span class="month">3월</span>
+                <span class="month">4월</span>
+                <span class="month">5월</span>
+                <span class="month">6월</span>
+                <span class="month">7월</span>
+                <span class="month">8월</span>
+                <span class="month">9월</span>
+                <span class="month">10월</span>
+                <span class="month">11월</span>
+                <span class="month">12월</span>
+            </div>
+        </div>
+        <div class="body">
+            <div class="dates"></div>
+        </div>
+    </div>
+
+    <script>
+        const db = firebase.firestore()
+
+        let now = new Date()
+
+        // 선택된 일자에 대한 정보
+        let selectedYear = null
+        let selectedMonth = null
+        let selectedDate = null
+
+        let yearContent = document.querySelector(".year-content")
+        let months = document.querySelectorAll(".month")
+
+        // 네비게이션 바
+
+        // 홈 버튼
+        document.getElementById("homeButton").addEventListener("click", () => location.replace = "./index.html")
+
+        //로그인 정보
+        let loginInfoSet = document.getElementById("loginInfo")
+        let loginInfo = JSON.parse(sessionStorage.getItem("loginInfo"))
+
+        if (loginInfo) {
+            let loginName = document.createElement("span")
+            loginName.innerHTML = loginInfo["name"] + " 님"
+            loginInfoSet.append(loginName)
+
+            let updateInfoButton = document.createElement("button")
+            updateInfoButton.style.marginLeft = "10px"
+            updateInfoButton.innerHTML = "회원 정보"
+            updateInfoButton.addEventListener("click", () => location.href = "./updateInfo.html")
+            loginInfoSet.append(updateInfoButton)
+
+            let logOutButton = document.createElement("button")
+            logOutButton.style.marginLeft = "10px"
+            logOutButton.innerHTML = "로그아웃"
+            logOutButton.addEventListener("click", () => {
+                sessionStorage.removeItem("loginInfo")
+                history.go(0)
+            })
+            loginInfoSet.append(logOutButton)
+        } else {
+            loginInfoSet.classList.add("nav-login-btn")
+            loginInfoSet.innerHTML = "로그인"
+            loginInfoSet.addEventListener("click", () => location.href = "./login.html")
+        }
+
+        // 연도를 현재의 연도로 달을 현재의 달로 세팅, 모든 달에 클릭 이벤트 달기
+        yearContent.innerHTML = now.getFullYear()
+        selectedYear = now.getFullYear()
+
+        for (let i = 0; i < months.length; i++) {
+            if (i == now.getMonth()) {
+                months[i].classList.add("month-selected")
+                selectedMonth = i + 1
+                f_setDates()
+            }
+            months[i].addEventListener("click", f_setMonth)
+        }
+
+        // 연도 변경 버튼
+        let yearSelect = document.getElementById("yearSelect")
+        let currentYear = 2000;
+
+        while (currentYear <= selectedYear) {
+            let option = document.createElement("option")
+            option.value = currentYear
+            option.innerHTML = currentYear
+            yearSelect.prepend(option)
+            currentYear++
+        }
+        yearSelect.value = selectedYear
+
+        yearSelect.addEventListener("change", () => {
+            selectedYear = yearSelect.value
+            yearContent.innerHTML = selectedYear
+            for (let i = 0; i < months.length; i++) {
+                months[i].classList.remove("month-selected")
+                if (i == selectedMonth - 1) {
+                    months[i].classList.add("month-selected")
+                    f_setDates()
+                }
+            }
+            yearSelect.style.visibility = "hidden"
+        })
+
+        document.querySelector(".year-set-btn").addEventListener("click", () => {
+            yearSelect.style.visibility = "visible"
+        })
+
+        // 클릭된 달로 바꾸는 이벤트
+        function f_setMonth() {
+            for (let i = 0; i < months.length; i++) {
+                months[i].classList.remove("month-selected")
+            }
+            event.target.classList.add("month-selected")
+            selectedMonth = parseInt(event.target.innerHTML)
+            f_setDates()
+        }
+
+        // 달에 맞는 날짜들로 세팅하는 이벤트
+        function f_setDates() {
+            let dateTag = document.querySelector(".dates")
+            dateTag.innerHTML = ""
+            let v_month = (selectedMonth + 1)
+            if (v_month >= 13) {
+                v_month = 1
+            }
+            let currentDateStr = (selectedYear + "") + "-" + (v_month + "").padStart(2, "0")
+            let currentDate = new Date(currentDateStr)
+            currentDate.setDate(currentDate.getDate() - 1)
+            for (let i = 0; i < currentDate.getDate(); i++) {
+                let dateDiv = document.createElement("div")
+                dateDiv.classList.add("date")
+
+                let dateContents = document.createElement("div")
+                dateContents.classList.add("date-contents")
+                dateContents.addEventListener("click", f_dateSelect)
+
+                let currentDateStr = (selectedYear + "") + "-" + (selectedMonth + "").padStart(2, "0") + "-" + (i + 1 + "").padStart(2, "0")
+                let currentSetDate = new Date(currentDateStr)
+
+                // 내일 이상의 날짜 클릭 이벤트 삭제
+                if (currentSetDate.getTime() > now.getTime()) {
+                    dateContents.removeEventListener("click", f_dateSelect)
+                    dateContents.classList.remove("date-contents")
+                    dateContents.classList.add("date-contents-invalid")
+                }
+
+                dateContents.innerHTML = ((i + 1) + "").padStart(2, "0")
+
+                // 로그인 되어 있으면 선택된 연도와 달의 식단 불러오기
+                if (loginInfo) {
+                    db.collection("food_data").doc(loginInfo["id"]).collection("date").doc(currentDateStr).collection("mealName").get()
+                        .then((result1) => {
+                            let totalKcal = 0
+                            let totalCarb = 0
+                            let totalProt = 0
+                            let totalFatce = 0
+                            result1.forEach((doc1) => {
+                                db.collection("food_data").doc(loginInfo["id"]).collection("date").doc(currentDateStr).collection("mealName").doc(doc1.id).collection("food_list").get()
+                                    .then((result2) => {
+                                        result2.forEach((doc2) => {
+                                            let v_data = doc2.data()
+                                            let currentWeight = parseInt(v_data["weight"]) / 100.0
+                                            let currentKcal = Math.floor(parseInt(v_data["kcal"]) * currentWeight * 100) / 100
+                                            let currentCarb = Math.floor(parseInt(v_data["carb"]) * currentWeight * 100) / 100
+                                            let currentProt = Math.floor(parseInt(v_data["prot"]) * currentWeight * 100) / 100
+                                            let currentFatce = Math.floor(parseInt(v_data["fatce"]) * currentWeight * 100) / 100
+
+                                            totalKcal += currentKcal
+                                            totalCarb += currentCarb
+                                            totalProt += currentProt
+                                            totalFatce += currentFatce
+
+                                            dateContents.innerHTML = ((i + 1) + "").padStart(2, "0") + " 열량 : " + Math.floor(totalKcal * 100) / 100
+                                                + "kcal, 탄수화물 : " + Math.floor(totalCarb * 100) / 100
+                                                + "g, 단백질 : " + Math.floor(totalProt * 100) / 100
+                                                + "g, 지방 : " + Math.floor(totalFatce * 100) / 100
+                                                + "g"
+                                        })
+                                    })
+                                    .catch((err) => console.error(err))
+                            })
+                        })
+                        .catch((err) => console.error(err))
+
+                }
+
+                dateDiv.append(dateContents)
+                dateTag.append(dateDiv)
+            }
+
+            // 해당 날짜가 클릭되었을 때 이벤트
+            let curSelectedDate = null
+
+            function f_dateSelect() {
+                let dates = document.querySelectorAll("date")
+
+                let v_target = event.target
+                let v_parent = v_target.parentElement
+
+                if (curSelectedDate != v_parent) {
+                    selectedDate = v_target.innerHTML.substr(0, 2)
+                    v_parent.style.height = "500px"
+
+                    if (loginInfo) {
+                        let comment = document.createElement("div")
+                        comment.classList.add("date-data")
+
+                        let writebtn = document.createElement("span")
+                        writebtn.classList.add("write-btn")
+                        writebtn.innerHTML = "새로 작성"
+                        writebtn.addEventListener("click", f_listBtn)
+
+                        let mealBox = document.createElement("div")
+                        mealBox.classList.add("meal-box")
+
+                        let meaNotExist = document.createElement("div")
+                        meaNotExist.innerHTML = "작성된 식단이 없습니다."
+
+                        let currentDateStr = (selectedYear + "") + "-" + (selectedMonth + "").padStart(2, "0") + "-" + selectedDate
+
+                        db.collection("food_data").doc(loginInfo["id"]).collection("date").doc(currentDateStr).collection("mealName").get()
+                            .then((result1) => {
+                                result1.forEach((doc1) => {
+                                    meaNotExist.innerHTML = ""
+                                    let mealName = doc1.data()["mealName"]
+                                    let totalKcal = 0
+                                    let totalCarb = 0
+                                    let totalProt = 0
+                                    let totalFatce = 0
+                                    let mealLine = document.createElement("div")
+                                    mealLine.classList.add("meal-line")
+                                    db.collection("food_data").doc(loginInfo["id"]).collection("date").doc(currentDateStr).collection("mealName").doc(doc1.id).collection("food_list").get()
+                                        .then((result2) => {
+                                            result2.forEach((doc2) => {
+                                                let v_data = doc2.data()
+                                                let currentWeight = parseInt(v_data["weight"]) / 100.0
+                                                let currentKcal = Math.floor(parseInt(v_data["kcal"]) * currentWeight * 100) / 100
+                                                let currentCarb = Math.floor(parseInt(v_data["carb"]) * currentWeight * 100) / 100
+                                                let currentProt = Math.floor(parseInt(v_data["prot"]) * currentWeight * 100) / 100
+                                                let currentFatce = Math.floor(parseInt(v_data["fatce"]) * currentWeight * 100) / 100
+
+                                                totalKcal += currentKcal
+                                                totalCarb += currentCarb
+                                                totalProt += currentProt
+                                                totalFatce += currentFatce
+
+                                                mealLine.innerHTML = mealName + " : 열량 : " + Math.floor(totalKcal * 100) / 100
+                                                    + "kcal, 탄수화물 : " + Math.floor(totalCarb * 100) / 100
+                                                    + "g, 단백질 : " + Math.floor(totalProt * 100) / 100
+                                                    + "g, 지방 : " + Math.floor(totalFatce * 100) / 100
+                                                    + "g"
+                                            })
+                                        })
+                                        .catch((err) => console.error(err))
+                                    mealBox.append(mealLine)
+                                    writebtn.innerHTML = "자세히 보기"
+                                })
+                            })
+                            .catch((err) => console.error(err))
+
+                        setTimeout(() => comment.append(writebtn), 50)
+                        mealBox.append(meaNotExist)
+                        comment.append(mealBox)
+                        v_parent.append(comment)
+
+                    } else {
+                        let comment = document.createElement("div")
+                        comment.classList.add("date-data")
+                        comment.innerHTML = "로그인 후 사용해주세요."
+
+                        let writebtn = document.createElement("span")
+                        writebtn.classList.add("write-btn")
+                        writebtn.innerHTML = "로그인"
+                        writebtn.addEventListener("click", () => location.href = "./login.html")
+                        setTimeout(() => comment.append(writebtn), 50)
+                        v_parent.append(comment)
+                    }
+
+                    curSelectedDate = v_parent
+                } else {
+                    v_parent.style.removeProperty("height")
+                    v_target.style.removeProperty("height")
+
+                    for (let i = v_parent.children.length - 1; i >= 0; i--) {
+                        if (i != 0) {
+                            setTimeout(() => v_parent.children[i].remove(), 200)
+                        }
+                    }
+
+                    curSelectedDate = null
+                    selectedDate = null
+                }
+            }
+
+            // 식단 목록 버튼
+            function f_listBtn() {
+                let v_query = "?year=" + selectedYear + "&month=" + selectedMonth + "&date=" + selectedDate
+                location.href = "mealList.html" + v_query
+            }
+        }
+    </script>
+</body>
+
+</html>

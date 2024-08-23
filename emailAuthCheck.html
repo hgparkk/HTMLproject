@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입 완료</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+    <script src="./resources/JS/service-key.js"></script>
+    <script>
+        firebase.initializeApp(firebaseConfig)
+    </script>
+
+    <link rel="stylesheet" href="./resources/CSS/userdoc.css">
+
+    <style>
+        .auth-text {
+            display: inline-block;
+            font-size: 20px;
+            margin: 13px;
+            text-align: center;
+        }
+
+        .auth-button-div {
+            text-align: center;
+            margin: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="userdoc-box">
+            <span id="result" class="auth-text">
+            </span>
+            <div class="auth-button-div">
+                <button id="goNext"></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const db = firebase.firestore()
+
+        let v_result = document.getElementById("result")
+        let v_goNext = document.getElementById("goNext")
+
+        if (firebase.auth().isSignInWithEmailLink(window.location.href)) {
+            let email = localStorage.getItem('registEmail')
+            let registInfo = JSON.parse(localStorage.getItem('registInfo'))
+
+            // 로컬 스토리지의 이메일이 로컬 스토리지 회원가입 정보의 이메일과 같을 때
+            if (email == registInfo["email"]) {
+
+                // 이메일 인증 진행
+                firebase.auth().signInWithEmailLink(email, window.location.href)
+                    .then((result) => {
+
+                        // 이메일이 인증 되었을 때 회원가입 정보를 db에 입력
+                        db.collection("user").doc(registInfo["id"]).set(registInfo)
+                            .then(() => {
+                                localStorage.removeItem('registEmail')
+                                localStorage.removeItem('registInfo')
+
+                                v_result.innerHTML = "회원가입이 완료되었습니다."
+                                v_goNext.innerHTML = "로그인 하러가기"
+                                v_goNext.addEventListener("click", () => location.replace("./login.html"))
+                            })
+                            .catch((err) => {
+                                console.error(err);
+                                fail()
+                            });
+                    })
+                    .catch((err) => {
+                        console.error(err)
+                        fail()
+                    });
+            } else {
+                fail()
+            }
+
+            function fail() {
+                v_result.innerHTML = "회원가입에 실패하였습니다."
+                v_goNext.innerHTML = "홈으로 돌아가기"
+                v_goNext.addEventListener("click", () => location.replace("./index.html"))
+            }
+        }
+    </script>
+</body>
+
+</html>
