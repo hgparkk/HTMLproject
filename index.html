@@ -133,6 +133,12 @@
             position: absolute;
             cursor: pointer;
         }
+
+        @media(max-width:620px) {
+            .months {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 
@@ -368,6 +374,7 @@
                 mealBox.classList.add("meal-box")
 
                 let meaNotExist = document.createElement("div")
+                meaNotExist.classList.add("meal-line")
                 meaNotExist.innerHTML = "작성된 식단이 없습니다."
 
                 let currentDateStr = (selectedYear + "") + "-" + (selectedMonth + "").padStart(2, "0") + "-" + selectedDate
@@ -413,7 +420,7 @@
                     .catch((err) => console.error(err))
 
                 setTimeout(() => comment.append(writebtn), 50)
-                setTimeout(() => mealBox.append(meaNotExist), 50)
+                setTimeout(() => mealBox.append(meaNotExist), 100)
                 comment.append(mealBox)
                 v_parent.append(comment)
 
