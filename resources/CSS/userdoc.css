@@ -1,0 +1,79 @@
+.container {
+    width: 80%;
+    min-width: 400px;
+    height: 90vh;
+    margin: auto;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.userdoc-box {
+    display: flex;
+    flex-direction: column;
+
+    border-radius: 20px;
+    border: 1px solid #F0F0F0;
+}
+
+.userdoc-content {
+    display: flex;
+}
+
+.userdoc-input-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.userdoc-text {
+    display: inline-block;
+    font-size: 20px;
+    margin: 13px;
+}
+
+.userdoc-input-text {
+    font-size: 20px;
+    margin: 10px;
+}
+
+.userdoc-div {
+    text-align: center;
+}
+
+.userdoc-div-btn {
+    cursor: pointer;
+}
+
+.userdoc-div-btn:hover {
+    text-decoration: underline;
+}
+
+.userdoc-btn-div {
+    display: flex;
+    justify-content: center;
+}
+
+.userdoc-btn {
+    width: 40%;
+    margin-top: 5px;
+    margin-bottom: 10px;
+
+    padding: 10px;
+    border-radius: 20px;
+
+    background-color: rgb(13, 110, 253);
+    color: white;
+}
+
+.userdoc-cancel-btn {
+    width: 40%;
+    margin-top: 5px;
+    margin-bottom: 10px;
+
+    padding: 10px;
+    border-radius: 20px;
+
+    background-color: rgb(108, 117, 125);
+    color: white;
+}
