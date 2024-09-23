@@ -44,9 +44,9 @@
 * * *
 
 ### 활용 오픈데이터
-#### 공공데이터 포털, 전국통합식품영양성분정보표준데이터 [https://www.data.go.kr/iim/api/selectAPIAcountView.do] (https://www.data.go.kr/iim/api/selectAPIAcountView.do) {: target="_blank"}
+#### 공공데이터 포털, 전국통합식품영양성분정보표준데이터 [https://www.data.go.kr/iim/api/selectAPIAcountView.do] (https://www.data.go.kr/iim/api/selectAPIAcountView.do)
 
 * * *
 
 ### PPT 자료
-#### [HTML프로젝트](https://docs.google.com/presentation/d/16se2H2dKOsP__YUHE5_5a0Q6OG_VQ3tWQtD46dzpSaM/edit#slide=id.p4) {: target="_blank"}
+#### [HTML프로젝트](https://docs.google.com/presentation/d/16se2H2dKOsP__YUHE5_5a0Q6OG_VQ3tWQtD46dzpSaM/edit#slide=id.p4)
