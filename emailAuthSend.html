@@ -54,7 +54,7 @@
             // 인증 버튼 클릭시 이동될 페이지 URL
             url: 'https://thriving-pika-91fe9f.netlify.app/emailAuthCheck.html',
             handleCodeInApp: true
-        };
+        }
 
         let v_inputEmail = localStorage.getItem("registEmail")
 
@@ -71,7 +71,7 @@
                 var errorCode = err.code;
                 var errorMessage = err.message;
                 console.error(errorCode + ", " + errorMessage)
-            });
+            })
 
 
         document.getElementById("gohome").addEventListener("click", () => location.replace("./index.html"))
