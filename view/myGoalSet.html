@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>식단 관리 웹사이트</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+    <script src="../resources/JS/service-key.js"></script>
+    <script>
+        firebase.initializeApp(firebaseConfig)
+    </script>
+
+    <link rel="stylesheet" href="../resources/CSS/userdoc.css">
+    <style>
+        .goal-set-btn {
+            width: 40%;
+            margin-top: 5px;
+            margin-right: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(13, 110, 253);
+            color: white;
+        }
+
+        .cancel-btn {
+            width: 40%;
+            margin-top: 5px;
+            margin-left: 5px;
+            margin-bottom: 10px;
+
+            padding: 10px;
+            border-radius: 20px;
+
+            background-color: rgb(108, 117, 125);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="userdoc-box">
+            <div style="display:flex; flex-direction: column;">
+                <div class="userdoc-content">
+                    <div class="userdoc-input-content">
+                        <div><span class="userdoc-text">목표 열량</span></div>
+                        <div><span class="userdoc-text">목표 탄수화물</span></div>
+                        <div><span class="userdoc-text">목표 단백질</span></div>
+                        <div><span class="userdoc-text">목표 지방</span></div>
+                    </div>
+                    <div class="userdoc-input-content">
+                        <div><input id="inputGoalCal" class="userdoc-input-text" type="number"></div>
+                        <div><input id="inputGoalCarb" class="userdoc-input-text" type="number"></div>
+                        <div><input id="inputGoalProt" class="userdoc-input-text" type="number"></div>
+                        <div><input id="inputGoalFatce" class="userdoc-input-text" type="number"></div>
+                    </div>
+                </div>
+                <div style="margin:10px;">　</div>
+                <div class="userdoc-btn-div userdoc-div">
+                    <div id="goalSetBtn" class="goal-set-btn userdoc-div-btn">목표 설정</div>
+                    <div id="cancelBtn" class="cancel-btn userdoc-div-btn">취소</div>
+                </div>
+                <div style="margin:10px;">　</div>
+                <div>
+                    <span style="margin:10px; color:green">아래 입력한 정보에 따라 목표 수치가 추천됩니다.</span>
+                </div>
+                <div>
+                    <span style="margin:10px; color:gray">(추천 수치는 필수 목표가 아닙니다)</span>
+                </div>
+                <div class="userdoc-content">
+                    <div class="userdoc-input-content">
+                        <div><span class="userdoc-text">키</span></div>
+                        <div><span class="userdoc-text">현재 체중</span></div>
+                        <div><span class="userdoc-text" style="width:127.033px;">목표 체중</span></div>
+                        <div><span class="userdoc-text">성별</span></div>
+                        <div><span class="userdoc-text">나이</span></div>
+                    </div>
+                    <div class="userdoc-input-content">
+                        <div><input id="inputHeight" class="userdoc-input-text" type="number"></div>
+                        <div><input id="inputCurWeight" class="userdoc-input-text" type="number"></div>
+                        <div><input id="inputGoalWeight" class="userdoc-input-text" type="number"></div>
+                        <div>
+                            <span style="display: inline-block; height:30px; margin:10px;">
+                                <input name="gender" value="male" type="radio">남
+                                <input name="gender" value="female" type="radio">여
+                            </span>
+                        </div>
+                        <div><input id="inputAge" class="userdoc-input-text" type="number"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const inputHeight = document.getElementById("inputHeight")
+        const inputCurWeight = document.getElementById("inputCurWeight")
+        const inputGoalWeight = document.getElementById("inputGoalWeight")
+        const inputGender = document.getElementsByName("gender")
+        const inputAge = document.getElementById("inputAge")
+
+        function calculateMacros() {
+            let height = inputHeight.value
+            let curWeight = inputCurWeight.value
+            let goalWeight = inputGoalWeight.value
+            let gender
+            inputGender.forEach((node) => {
+                if (node.checked) {
+                    gender = node.value
+                }
+            })
+            let age = inputAge.value
+
+            let bmr;
+            if (gender === 'male') {
+                bmr = 10 * curWeight + 6.25 * height - 5 * age + 5;
+            } else if (gender === 'female') {
+                bmr = 10 * curWeight + 6.25 * height - 5 * age - 161;
+            } else {
+                throw new Error("Invalid gender. Use 'male' or 'female'.");
+            }
+
+            // 2. 목표 열량 설정 (체중 감량 기준)
+            const calorieDeficit = 500; // 하루 500kcal 감량
+            const targetCalories = bmr - calorieDeficit;
+
+            // 3. 매크로 영양소 분배 비율
+            const carbRatio = 0.5;    // 탄수화물 50%
+            const proteinRatio = 0.2; // 단백질 20%
+            const fatRatio = 0.3;     // 지방 30%
+
+            // 탄수화물, 단백질, 지방 계산
+            const carbs = (targetCalories * carbRatio) / 4; // 탄수화물 1g = 4kcal
+            const protein = (targetCalories * proteinRatio) / 4; // 단백질 1g = 4kcal
+            const fats = (targetCalories * fatRatio) / 9; // 지방 1g = 9kcal
+
+            document.getElementById("inputGoalCal").placeholder = Math.round(targetCalories)
+            document.getElementById("inputGoalCarb").placeholder = Math.round(carbs)
+            document.getElementById("inputGoalProt").placeholder = Math.round(protein)
+            document.getElementById("inputGoalFatce").placeholder = Math.round(fats)
+        }
+
+        inputHeight.addEventListener("input", calculateMacros)
+        inputCurWeight.addEventListener("input", calculateMacros)
+        inputGoalWeight.addEventListener("input", calculateMacros)
+        inputAge.addEventListener("input", calculateMacros)
+
+        inputGender.forEach((radio) => {
+            radio.addEventListener('change', calculateMacros)
+        })
+    </script>
+</body>
+
+</html>

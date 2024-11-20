@@ -4,18 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>회원가입 완료</title>
+    <title>식단 관리 웹사이트</title>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
-    <script src="./resources/JS/service-key.js"></script>
+    <script src="../resources/JS/service-key.js"></script>
     <script>
         firebase.initializeApp(firebaseConfig)
     </script>
 
-    <link rel="stylesheet" href="./resources/CSS/userdoc.css">
+    <link rel="stylesheet" href="../resources/CSS/userdoc.css">
 
     <style>
         .auth-text {
@@ -68,7 +68,7 @@
 
                                 v_result.innerHTML = "회원가입이 완료되었습니다."
                                 v_goNext.innerHTML = "로그인 하러가기"
-                                v_goNext.addEventListener("click", () => location.replace("./login.html"))
+                                v_goNext.addEventListener("click", () => location.replace("./index.html"))
                             })
                             .catch((err) => {
                                 console.error(err);
@@ -86,7 +86,7 @@
             function fail() {
                 v_result.innerHTML = "회원가입에 실패하였습니다."
                 v_goNext.innerHTML = "홈으로 돌아가기"
-                v_goNext.addEventListener("click", () => location.replace("./index.html"))
+                v_goNext.addEventListener("click", () => location.replace("./main.html"))
             }
         }
     </script>

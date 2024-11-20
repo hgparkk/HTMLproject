@@ -4,18 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>식단 목록</title>
+    <title>식단 관리 웹사이트</title>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
-    <script src="./resources/JS/service-key.js"></script>
+    <script src="../resources/JS/service-key.js"></script>
     <script>
         firebase.initializeApp(firebaseConfig)
     </script>
 
-    <link rel="stylesheet" href="./resources/CSS/nav.css">
+    <link rel="stylesheet" href="../resources/CSS/nav.css">
 
     <style>
         .head-content {
@@ -207,6 +207,12 @@
         let loginName = document.createElement("span")
         loginName.innerHTML = loginInfo["name"] + " 님"
         loginInfoSet.append(loginName)
+
+        let myGoalButton = document.createElement("button")
+        myGoalButton.style.marginLeft = "10px"
+        myGoalButton.innerHTML = "나의 목표 설정"
+        myGoalButton.addEventListener("click", () => location.href = "./myGoalSet.html")
+        loginInfoSet.append(myGoalButton)
 
         let updateInfoButton = document.createElement("button")
         updateInfoButton.style.marginLeft = "10px"

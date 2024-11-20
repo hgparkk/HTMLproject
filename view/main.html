@@ -4,18 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>내 식단</title>
+    <title>식단 관리 웹사이트</title>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
-    <script src="./resources/JS/service-key.js"></script>
+    <script src="../resources/JS/service-key.js"></script>
     <script>
         firebase.initializeApp(firebaseConfig)
     </script>
 
-    <link rel="stylesheet" href="./resources/CSS/nav.css">
+    <link rel="stylesheet" href="../resources/CSS/nav.css">
 
     <style>
         .year {
@@ -187,9 +187,9 @@
 
         let loginInfo = JSON.parse(sessionStorage.getItem("loginInfo"))
 
-        // 로그인이 안되어있을 경우 로그인창으로 이동
+        // 주소창 입력으로 들어오게 되면 첫 화면으로 돌아감
         if (!loginInfo) {
-            location.href = "./login.html"
+            location.replace("./index.html")
         }
 
         let now = new Date()
@@ -205,7 +205,7 @@
         // 네비게이션 바
 
         // 홈 버튼
-        document.getElementById("homeButton").addEventListener("click", () => location.replace("./index.html"))
+        document.getElementById("homeButton").addEventListener("click", () => location.replace("./main.html"))
 
         //로그인 정보
         let loginInfoSet = document.getElementById("loginInfo")
@@ -214,6 +214,12 @@
         let loginName = document.createElement("span")
         loginName.innerHTML = loginInfo["name"] + " 님"
         loginInfoSet.append(loginName)
+
+        let myGoalButton = document.createElement("button")
+        myGoalButton.style.marginLeft = "10px"
+        myGoalButton.innerHTML = "나의 목표 설정"
+        myGoalButton.addEventListener("click", () => location.href = "./myGoalSet.html")
+        loginInfoSet.append(myGoalButton)
 
         let updateInfoButton = document.createElement("button")
         updateInfoButton.style.marginLeft = "10px"
@@ -226,7 +232,7 @@
         logOutButton.innerHTML = "로그아웃"
         logOutButton.addEventListener("click", () => {
             sessionStorage.removeItem("loginInfo")
-            history.go(0)
+            location.href=".index.html"
         })
         loginInfoSet.append(logOutButton)
 
