@@ -30,6 +30,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            overflow-y: scroll;
         }
 
         .item-div {
@@ -84,7 +85,7 @@
         let dataBox = document.querySelector(".bottom")
 
         let v_ajax = new XMLHttpRequest()
-        v_ajax.open("GET", "./resources/jsonData/food_data.json")
+        v_ajax.open("GET", "../resources/jsonData/food_data.json")
 
         v_ajax.onload = () => {
             let v_json = JSON.parse(v_ajax.response)

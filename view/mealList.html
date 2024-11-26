@@ -17,6 +17,7 @@
 
     <link rel="stylesheet" href="../resources/CSS/nav.css">
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .head-content {
             margin-top: 100px;
@@ -155,6 +156,7 @@
             <div class="meals">
                 <div class="meal-background">
                     <div id="shortCut"></div>
+                    <div id="compareGoal"></div>
                 </div>
             </div>
             <div class="meal-content-add-background">
@@ -344,6 +346,87 @@
                         })
                         .catch((err) => console.error(err))
                 })
+                setTimeout(() => {
+                    console.log(shortCutKcal)
+                    console.log(shortCutCarb)
+                    console.log(shortCutProt)
+                    console.log(shortCutFatce)
+                    dateKcal = Math.floor(shortCutKcal * 100) / 100
+                    dateCarb = Math.floor(shortCutCarb * 100) / 100
+                    dateProt = Math.floor(shortCutProt * 100) / 100
+                    dateFatce = Math.floor(shortCutFatce * 100) / 100
+                    db.collection("goal").doc(loginInfo["id"]).get()
+                        .then((result) => {
+                            let goals = result.data();
+                            if (goals) {
+                                let canvas = document.createElement("canvas")
+
+                                // Radar Chart 데이터 정의
+                                const data = {
+                                    labels: ['열량', '탄수화물', '단백질', '지방'], // 4방사 그래프의 축
+                                    datasets: [
+                                        {
+                                            label: '목표',
+                                            data: [goals["goalKcal"], goals["goalCarb"] * 10, goals["goalProt"] * 10, goals["goalFatce"] * 10], // 첫 번째 데이터
+                                            backgroundColor: 'rgba(255, 99, 132, 0.2)', // 투명도 있는 배경색
+                                            borderColor: 'rgba(255, 99, 132, 1)', // 테두리 색
+                                            borderWidth: 2, // 테두리 두께
+                                        },
+                                        {
+                                            label: '식단',
+                                            data: [dateKcal, dateCarb * 10, dateProt * 10, dateFatce * 10], // 두 번째 데이터
+                                            backgroundColor: 'rgba(54, 162, 235, 0.2)', // 투명도 있는 배경색
+                                            borderColor: 'rgba(54, 162, 235, 1)', // 테두리 색
+                                            borderWidth: 2, // 테두리 두께
+                                        },
+                                    ],
+                                };
+
+                                // 옵션 정의
+                                const options = {
+                                    responsive: false, // 반응형 레이아웃
+                                    plugins: {
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function (tooltipItem) {
+                                                    const label = tooltipItem.label;
+                                                    if (label === '열량') {
+                                                        return `Value: ${tooltipItem.raw}`; // 변경하지 않고 표시
+                                                    }
+                                                    // 원래 값으로 변환해서 표시
+                                                    const originalValue = Math.floor(tooltipItem.raw / 10 * 100) / 100;
+                                                    return `Value: ${originalValue}`;
+                                                },
+                                            },
+                                        },
+                                        legend: {
+                                            display: true, // 범례 표시
+                                            position: 'top', // 범례 위치
+                                        },
+                                    },
+                                    scales: {
+                                        r: {
+                                            ticks: {
+                                                display: false, // 눈금 값 숨기기
+                                            },
+                                            grid: {
+                                                color: 'rgba(0, 0, 0, 0.1)', // 그리드 색상 설정 (선택 사항)
+                                            },
+                                        },
+                                    },
+                                };
+
+                                // Radar Chart 생성
+                                const radarChart = new Chart(canvas, {
+                                    type: 'radar', // 차트 유형
+                                    data: data,
+                                    options: options,
+                                });
+
+                                setTimeout(() => document.getElementById("compareGoal").append(canvas), 100)
+                            }
+                        })
+                }, 100)
             })
             .catch((err) => console.error(err))
         let mealContentAdd = document.querySelector(".meal-content-add")
@@ -686,7 +769,6 @@
                 let currentIndex = event.target.parentElement.parentElement.parentElement.children[0].value
 
                 for (let i of settedData[currentIndex]) {
-                    console.log(i)
                     let currentData = {
                         "key": i["key"],
                         "name": i["name"],
@@ -711,7 +793,8 @@
                                                 .collection("mealName").doc(mealName)
                                                 .collection("food_list").doc(currentData["key"]).set(currentData)
                                                 .then(() => {
-                                                    setTimeout(() => history.go(0), 10)
+                                                    alert("식단이 등록되었습니다.")
+                                                    history.go(0)
                                                 })
                                                 .catch((err) => console.error(err))
                                         })

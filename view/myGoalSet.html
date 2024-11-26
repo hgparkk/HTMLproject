@@ -46,18 +46,18 @@
 </head>
 
 <body>
-    <div class="container">
+    <div class="container" style="height:auto;">
         <div class="userdoc-box">
             <div style="display:flex; flex-direction: column;">
                 <div class="userdoc-content">
                     <div class="userdoc-input-content">
-                        <div><span class="userdoc-text">목표 열량</span></div>
-                        <div><span class="userdoc-text">목표 탄수화물</span></div>
-                        <div><span class="userdoc-text">목표 단백질</span></div>
-                        <div><span class="userdoc-text">목표 지방</span></div>
+                        <div><span class="userdoc-text">목표 열량 (kcal)</span></div>
+                        <div><span class="userdoc-text">목표 탄수화물 (g)</span></div>
+                        <div><span class="userdoc-text">목표 단백질 (g)</span></div>
+                        <div><span class="userdoc-text">목표 지방 (g)</span></div>
                     </div>
                     <div class="userdoc-input-content">
-                        <div><input id="inputGoalCal" class="userdoc-input-text" type="number"></div>
+                        <div><input id="inputGoalKcal" class="userdoc-input-text" type="number"></div>
                         <div><input id="inputGoalCarb" class="userdoc-input-text" type="number"></div>
                         <div><input id="inputGoalProt" class="userdoc-input-text" type="number"></div>
                         <div><input id="inputGoalFatce" class="userdoc-input-text" type="number"></div>
@@ -66,7 +66,7 @@
                 <div style="margin:10px;">　</div>
                 <div class="userdoc-btn-div userdoc-div">
                     <div id="goalSetBtn" class="goal-set-btn userdoc-div-btn">목표 설정</div>
-                    <div id="cancelBtn" class="cancel-btn userdoc-div-btn">취소</div>
+                    <div id="goalDeleteBtn" class="cancel-btn userdoc-div-btn">목표삭제</div>
                 </div>
                 <div style="margin:10px;">　</div>
                 <div>
@@ -75,18 +75,35 @@
                 <div>
                     <span style="margin:10px; color:gray">(추천 수치는 필수 목표가 아닙니다)</span>
                 </div>
+                <div class="userdoc-content" style="justify-content: center;">
+                    <div>
+                        <div><span style="color:gray">적정 열량</span></div>
+                        <div><span style="color:gray">적정 탄수화물</span></div>
+                        <div><span style="color:gray">적정 단백질</span></div>
+                        <div><span style="color:gray">적정 지방</span></div>
+                    </div>
+                    <div style="width:101.633px; text-align: end;">
+                        <div><span id="recKcal" style="color:gray">0</span></div>
+                        <div><span id="recCarb" style="color:gray">0</span></div>
+                        <div><span id="recProt" style="color:gray">0</span></div>
+                        <div><span id="recFatce" style="color:gray">0</span></div>
+                    </div>
+                    <div style="width:101.633px;">
+                        <div><span>kcal</span></div>
+                        <div><span>g</span></div>
+                        <div><span>g</span></div>
+                        <div><span>g</span></div>
+                    </div>
+                </div>
                 <div class="userdoc-content">
                     <div class="userdoc-input-content">
-                        <div><span class="userdoc-text">키</span></div>
-                        <div><span class="userdoc-text">현재 체중</span></div>
-                        <div><span class="userdoc-text" style="width:127.033px;">목표 체중</span></div>
                         <div><span class="userdoc-text">성별</span></div>
                         <div><span class="userdoc-text">나이</span></div>
+                        <div><span class="userdoc-text" style="width:127.033px;">키</span></div>
+                        <div><span class="userdoc-text">현재 체중</span></div>
+                        <div><span class="userdoc-text">목표 체중</span></div>
                     </div>
                     <div class="userdoc-input-content">
-                        <div><input id="inputHeight" class="userdoc-input-text" type="number"></div>
-                        <div><input id="inputCurWeight" class="userdoc-input-text" type="number"></div>
-                        <div><input id="inputGoalWeight" class="userdoc-input-text" type="number"></div>
                         <div>
                             <span style="display: inline-block; height:30px; margin:10px;">
                                 <input name="gender" value="male" type="radio">남
@@ -94,17 +111,45 @@
                             </span>
                         </div>
                         <div><input id="inputAge" class="userdoc-input-text" type="number"></div>
+                        <div><input id="inputHeight" class="userdoc-input-text" type="number"></div>
+                        <div><input id="inputCurWeight" class="userdoc-input-text" type="number"></div>
+                        <div><input id="inputGoalWeight" class="userdoc-input-text" type="number"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     <script>
+        let loginInfo = JSON.parse(sessionStorage.getItem("loginInfo"))
+
+        // 주소창 입력으로 들어오게 되면 첫 화면으로 돌아감
+        if (!loginInfo) {
+            location.replace("./index.html")
+        }
+
+        const db = firebase.firestore()
+
+        const inputGoalKcal = document.getElementById("inputGoalKcal")
+        const inputGoalCarb = document.getElementById("inputGoalCarb")
+        const inputGoalProt = document.getElementById("inputGoalProt")
+        const inputGoalFatce = document.getElementById("inputGoalFatce")
+
         const inputHeight = document.getElementById("inputHeight")
         const inputCurWeight = document.getElementById("inputCurWeight")
         const inputGoalWeight = document.getElementById("inputGoalWeight")
         const inputGender = document.getElementsByName("gender")
         const inputAge = document.getElementById("inputAge")
+
+        db.collection("goal").doc(loginInfo["id"]).get()
+            .then((result) => {
+                let goals = result.data()
+                if (goals) {
+                    inputGoalKcal.value = parseInt(goals.goalKcal)
+                    inputGoalCarb.value = parseInt(goals.goalCarb)
+                    inputGoalProt.value = parseInt(goals.goalProt)
+                    inputGoalFatce.value = parseInt(goals.goalFatce)
+                }
+            })
 
         function calculateMacros() {
             let height = inputHeight.value
@@ -117,6 +162,10 @@
                 }
             })
             let age = inputAge.value
+
+            if (height == 0 || curWeight == 0 || goalWeight == 0 || !gender || age == 0) {
+                return
+            }
 
             let bmr;
             if (gender === 'male') {
@@ -141,10 +190,15 @@
             const protein = (targetCalories * proteinRatio) / 4; // 단백질 1g = 4kcal
             const fats = (targetCalories * fatRatio) / 9; // 지방 1g = 9kcal
 
-            document.getElementById("inputGoalCal").placeholder = Math.round(targetCalories)
-            document.getElementById("inputGoalCarb").placeholder = Math.round(carbs)
-            document.getElementById("inputGoalProt").placeholder = Math.round(protein)
-            document.getElementById("inputGoalFatce").placeholder = Math.round(fats)
+            inputGoalKcal.placeholder = Math.round(targetCalories)
+            inputGoalCarb.placeholder = Math.round(carbs)
+            inputGoalProt.placeholder = Math.round(protein)
+            inputGoalFatce.placeholder = Math.round(fats)
+
+            document.getElementById("recKcal").innerHTML = Math.round(targetCalories)
+            document.getElementById("recCarb").innerHTML = Math.round(carbs)
+            document.getElementById("recProt").innerHTML = Math.round(protein)
+            document.getElementById("recFatce").innerHTML = Math.round(fats)
         }
 
         inputHeight.addEventListener("input", calculateMacros)
@@ -154,6 +208,53 @@
 
         inputGender.forEach((radio) => {
             radio.addEventListener('change', calculateMacros)
+        })
+
+        document.getElementById("goalSetBtn").addEventListener("click", () => {
+            if (confirm("목표를 등록하시겠습니까?")) {
+                let currentData = {
+                    "goalKcal": inputGoalKcal.value,
+                    "goalCarb": inputGoalCarb.value,
+                    "goalProt": inputGoalProt.value,
+                    "goalFatce": inputGoalFatce.value,
+                }
+
+                db.collection("goal").doc(loginInfo["id"]).set({ "id": loginInfo["id"] })
+                    .then(() => {
+                        db.collection("goal").doc(loginInfo["id"]).set(currentData)
+                            .then(() => {
+                                alert("목표가 설정되었습니다.")
+                                locaiton.href = "./main.html"
+                            })
+                            .catch((err) => console.error(err))
+                    })
+            }
+        })
+
+        document.getElementById("goalDeleteBtn").addEventListener("click", () => {
+            if (confirm("목표를 삭제하시겠습니까?")) {
+                db.collection("goal").doc(loginInfo["id"]).get()
+                    .then((result) => {
+                        let goals = result.data()
+                        if (!goals) {
+                            alert("등록된 목표가 없습니다.")
+                            return
+                        } else {
+                            db.collection("goal").doc(loginInfo["id"]).delete()
+                                .then((result) => {
+                                    alert("목표가 삭제되었습니다.")
+                                    inputGoalKcal.value = ""
+                                    inputGoalCarb.value = ""
+                                    inputGoalProt.value = ""
+                                    inputGoalFatce.value = ""
+                                    location.href = "/main.html"
+                                })
+                                .catch((err) => {
+                                    console.error(err)
+                                })
+                        }
+                    })
+            }
         })
     </script>
 </body>
