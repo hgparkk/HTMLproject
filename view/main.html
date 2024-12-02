@@ -446,7 +446,7 @@
                             db.collection("goal").doc(loginInfo["id"]).get()
                                 .then((result) => {
                                     let goals = result.data();
-                                    if (goals) {
+                                    if (goals && (dateKcal != 0 || dateCarb !=0 || dateProt !=0 || dateFatce != 0)) {
                                         let canvas = document.createElement("canvas")
 
                                         // Radar Chart 데이터 정의
